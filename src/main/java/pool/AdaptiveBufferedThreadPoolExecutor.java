@@ -97,9 +97,9 @@ public class AdaptiveBufferedThreadPoolExecutor extends AbstractExecutorService 
 
     private int maxRetryAttempts;  // 最大重试次数
 
-    private Integer threadLoadJudge;
+    private Integer threadLoadJudge; // 线程池阈值 若为-1，确保当前值时刻是高TPLL
 
-    private double cpuLoadJudge;
+    private double cpuLoadJudge;  // cpu阈值
 
     private volatile AtomicInteger threadLoad = new AtomicInteger(0);
 
@@ -504,7 +504,7 @@ public class AdaptiveBufferedThreadPoolExecutor extends AbstractExecutorService 
                                               RejectedExecutionHandler handler,
                                               double bufferDegree,
                                               boolean isPreventRejection,
-                                              Integer threadLoadJudge,
+                                              Integer threadLoadJudge, // 100%成功率，Interger.MAX_value
                                               double cpuLoadJudge,
                                               long waitTime,
                                               long timeout,
@@ -535,7 +535,7 @@ public class AdaptiveBufferedThreadPoolExecutor extends AbstractExecutorService 
         this.basicCalculate = new BasicCalculate();
     }
 
-
+    //  核心流程
     public void execute(Runnable command) {
         if (command == null)
             throw new NullPointerException();  // 如果命令为空，则抛出空指针异常
@@ -551,7 +551,7 @@ public class AdaptiveBufferedThreadPoolExecutor extends AbstractExecutorService 
             c = ctl.get();  // 重新获取控制状态，以便检查状态变化
         }
 
-        //step2
+        //step2 整个任务队列长度：workQueue.remainingCapacity()剩余队列长度 + workQueue.size() 已使用队列长度
         if (workQueue.size() <= (workQueue.remainingCapacity() + workQueue.size()) * bufferDegree) {
             if (isRunning(c) && workQueue.offer(command)) {  // 如果线程池在运行状态且队列有空间，加入任务
                 threadLoadDecrement(0);  // 线程负载自减
@@ -634,7 +634,7 @@ public class AdaptiveBufferedThreadPoolExecutor extends AbstractExecutorService 
     // CPU空转并等待重试的方法（使用指数退避算法）
     private boolean spinAndRetry(Runnable command) {
         int retryCount = 0;  // 记录重试次数
-        long maxWaitTime = 1000L;  // 最大空转等待时间，单位是毫秒
+        long maxWaitTime = 1000L;  // 最大空转等待时间，单位是毫秒 1000毫秒 = 1s
 
         while (retryCount < maxRetryAttempts) {
             long startTime = System.currentTimeMillis();

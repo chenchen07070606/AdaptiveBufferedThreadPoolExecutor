@@ -9,7 +9,7 @@ public class Test {
     private static boolean isBuffer = true;
 
     public static void main(String[] args) throws InterruptedException {
-//        test1(16, 100, 300, 0.2);
+        test1(16, 100, 300, 0.2);// 这里的0.2是循环指标，并不是真的0.2，而是后面是取值范围（0-5）*0.2
 //        test2(16, 100, 300, 0.2);
         AdaptiveBufferedThreadPoolExecutor.BasicCalculate basicCalculate = new AdaptiveBufferedThreadPoolExecutor.BasicCalculate();
         basicCalculate.updateCPULoad();
